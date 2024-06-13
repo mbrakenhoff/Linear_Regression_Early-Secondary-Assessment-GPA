@@ -1,4 +1,4 @@
-# High School GPA Prediction Project
+# Predicting Future GPA Using Early Secondary Assessments
 
 ## Context
 This project aims to analyze and predict the GPA of high school students using their ACT Aspire scores and other relevant factors. By leveraging a multiple linear regression model, we seek to identify key predictors of GPA and validate the model's accuracy. The ultimate goal is to use the model to predict future students' GPAs and implement interventions for those predicted to perform below a set level.
@@ -38,6 +38,7 @@ The dataset contains various attributes related to students' academic performanc
 
 ## Statistical Model
 The final multiple linear regression model is given by:
+
 \[ \hat{Y} = \beta_0 + \beta_1 \text{English} + \beta_2 \text{Science} + \epsilon \]
 
 Where:
