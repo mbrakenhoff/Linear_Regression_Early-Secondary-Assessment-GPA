@@ -38,13 +38,13 @@ The dataset contains various attributes related to students' academic performanc
 
 ## Statistical Model
 The final multiple linear regression model is given by:
-$$
-\[ \hat{Y} = \beta_0 + \beta_1 \text{English} + \beta_2 \text{Science} + \epsilon \]
-$$
+
+$$\[ \hat{Y} = \beta_0 + \beta_1 \text{English} + \beta_2 \text{Science} + \epsilon \]$$
+
 Where:
-- $$\( \hat{Y} \)$$ is the predicted GPA
-- $$\( \beta_0, \beta_1, \beta_2 \)$$ are the estimated regression coefficients
-- $$\( \epsilon \)$$ is the error term
+- $\( \hat{Y} \)$ is the predicted GPA
+- $\( \beta_0, \beta_1, \beta_2 \)$ are the estimated regression coefficients
+- $\( \epsilon \)$ is the error term
 
 ## Summary of Findings
 The study found that English and Science scores have statistically significant effects on GPA. The model explains 14.83% of the variation in GPA, indicating some predictive power. However, the prediction interval is wide, suggesting the model may have limited practical use in predicting individual students' GPAs.
