@@ -1,0 +1,382 @@
+---
+title: "Early Secondary Assessment & GPA"
+author: "Michael Brakenhoff"
+date: 
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+library(asbio)
+library(xtable)
+library(shiny)
+library(knitr)
+library(DT)
+require(Hmisc)
+require(faraway)
+library(car)
+require(readxl)
+require(leaps)
+
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(fig.align = "center")
+
+
+out_type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+
+display_output <- function(dataset, out_type, filter_opt = 'none') {
+  
+  if (out_type == "html") {
+    out_table <- DT::datatable(dataset, filter = filter_opt)
+  } else {
+    out_table <- knitr::kable(dataset)
+  } 
+  
+  out_table
+}
+```
+
+```{r data load, include=FALSE}
+path = "C:/Users/brake/OneDrive/Documents/Masters/840 Linear Regression/Final Project/Final.xlsx"
+Final <- read_xlsx(path, col_names = TRUE)
+Grades <- na.omit(Final[,-3])
+attach(Grades)
+```
+
+# I. Introduction
+### A. Study Design
+  
+An observational study of a high schools GPA and freshman year assessments is considered. The teacher at the high school recorded the **GPA's** of students that took his class at the end of their $10^{th}$ grade year.  Each individuals students performance on the ACT Aspire, taken during their $9^{th}$ grade year, is also recorded.  Performance in **English**, **Mathematics**, **Reading**, and **Science** , our predictor variables, are assessed (scaled 400 to 460). For ease of understanding, these will be scaled back to 0 scale (0 to 60)
+Another potential deterministic variable, whether each individual student is or ever has been flagged to receive services(IEP, 504, ELL/ESL, BIP), **Flag**, is included. A "0" indicates the student has never been flagged, "1" indicates that the student is/has been flagged.    
+Each student corresponds to an identification number, 1-304.  There are 282 cases included in this analysis; cases 142-282 were used to build the model and cases 1-141 were used in the validation of the model.
+
+```{r describe}
+display_output(Grades, out_type)
+Grades$English <- Grades$English-400 
+Grades$Math <- Grades$Math-400 
+Grades$Reading <- Grades$Reading-400 
+Grades$Science <- Grades$Science-400 
+
+m.Grades <- Grades[c(142:282),]
+v.Grades <- Grades[c(1:141),]
+```
+
+### B. Aims
+  
+It is believed that a model chosen from these variables has predictive power for GPA. The purpose of this study is to identify and validate the optimal model.  If a model is found to have predictive power the model will be utilized to predict future students GPA's and implement interventions for those predicted to perform below a set level.  
+  
+### C. Statistical Model
+  
+A multiple linear regression model of the first order is considered. Let
+
+  $Y_i =$ the **GPA** of the $i^{th}$ student,  
+
+  $X_{i1}=$ the **English** score for the $i^{th}$ student,  
+
+  $X_{i2}=$ the **Math** score for the $i^{th}$ student,   
+  
+  $X_{i3}=$ the **Reading** score for the $i^{th}$ student,    
+  
+  $X_{i4}=$ the **Science** score for the $i^{th}$ student,   
+  
+  $X_{i5}=$ whether or not the $i_{th}$ student has ever been flagged for services, with $X_5 = 1$ for "yes" and $X_5 = 0$ for "no".  
+  
+The **initial model** is given by
+
+$$Y_i = \beta_0 + \beta_1X_{i1} + \beta_2X_{i2} + \beta_3X_{i3} + \beta_4X_{i4} + \beta_5X_{i5} + \varepsilon_i$$  where $\varepsilon_i \sim iidN(0,\sigma^2)$, $i = , 142, . . . , 242$, and $\beta_0, \beta_1, . . . , \beta_5,$ and $\sigma^2$ are the unknown model parameters.
+
+```{r m1}
+m1 <- lm(GPA ~ English + Math + Reading + Science + Flag, data = m.Grades)
+m.full <- lm(GPA ~ English + Science, data = Grades)
+```
+  
+# II. Preliminary Analysis
+### A. Bivariate Associations  
+  
+
+```{r scatterplots, fig.cap= "Figure 1: A Scatterplot of variates."}
+pairs(GPA~ English + Math + Reading + Science, data = m.Grades)
+```  
+  
+A scatterplot matrix(figure 1) indicates positive linear associations between all variables.  
+The Pearson correlation coefficients for all pairwise association are shown in Table 2. A strong covariate correlation is observed between several predictor variables.
+  
+```{r correlation, fig.cap="Figure 2: Pearson's Correlation Coefficients Matrix."}
+kable(cor(m.Grades[,-c(1,7)]), caption ="Figure 2: Pearson's Correlation Coefficients Matrix." )
+```  
+  
+
+### B. Screening of Covariates and Verification of Assumptions
+  
+Based on automatic variable selection methods in combination with criterion-based statistics, Mathematics, Reading, and Flag were removed from the model. A validation data set was used to validate the chosen model, then Partial residual plots, residual-versus-fitted plots, and measures of influence were investigated and no issues with high influence points, linearity, constant variance, independence, or normality were identified. (appendix)
+
+### C. Final Model
+
+The **final model** is given by
+
+$$Y_i = \beta_0 + \beta_1X_{i1} + \beta_4X_{i4} + \varepsilon_i$$
+
+where $\varepsilon_i \sim iidN(0,\sigma^2)$, $i = 1, 2, . . . , 113$, and $\beta_0, \beta_1, . . . , \beta_4,$ and $\sigma^2$ are the unknown model parameters.
+  
+
+# III. Statistical Analysis  
+  
+  
+The fitted model below was obtained by splitting the data into two equal cases (141) and identifying the most appropriate model from one half of the data set. The chosen model was then validated by using the other half of the original data set. Finally, after all assumptions were checked using residual analysis, the final model was fit using the whole data set (appendix).
+The final model explains `r round((summary(m.full)$r.squared)*100, 2)`% of the variation of the $GPA$ of students. The estimated regression was found to be: $$ \hat{Y} = 0.988 + 0.0203(English) + 0.03556(Science)$$  
+
+```{r}
+summary(m.full)
+anova(m.full)
+confint(m.full)
+```
+
+# IV. Summary of Findings
+  
+It was found, using a first order multiple linear regression model that the application of a students' English & Science scores had statistically significant effects on GPA.  While statistically speaking there is predictive power, an examination of the explained variation ($R^2=$ `r round((summary(m.full)$r.squared)*100, 2)`% ), the MSE (`r round(summary(m.full)$sigma, 4)` ), and the standard error of the coefficients, indicate a prediction interval that will be much wider than is useful for the prediction of a students GPA.
+
+
+# V. Appendix
+### A. Diagnostics for Predictors
+  
+A stripchart (jittered), boxplot, and histogram is used to identify the distribution and shape of each continuous predictor variable and the variable of interest (GPA). 
+  
+It was also used to identify any potential outliers/high leverage points.  
+The distribution of each variate appears to be approximately normal.  Each covariate appears to have one or two outliers. The leverage of these values will be assessed later(appendix).
+
+```{r stripchart }
+for (i in 2:6){
+  par(mfrow=c(1,3))
+  stripchart(m.Grades[,i], main = "",
+                          vertical = T, method = "jitter")
+  boxplot(m.Grades[,i], main = names(m.Grades)[i])
+  hist(m.Grades[,i], main = )
+  par(mfrow=c(1,1))
+}
+```
+
+Tables of each of the variables based upon whether or not the students were flagged for services appear to indicate that there are no significant differences.
+  
+```{r tables}
+attach(m.Grades)
+m.flag <- cbind(tapply(GPA, Flag, mean), tapply(English, Flag, mean),tapply(Math, Flag, mean),tapply(Reading, Flag, mean),tapply(Science, Flag, mean))
+colnames(m.flag) <- c("GPA", "English", "Math", "Reading", "Science")
+rownames(m.flag) <- c("No", "Yes")
+
+s.flag <- cbind(tapply(GPA, Flag, sd), tapply(English, Flag, sd),tapply(Math, Flag, sd),tapply(Reading, Flag, sd),tapply(Science, Flag, sd))
+colnames(s.flag) <- c("GPA", "English", "Math", "Reading", "Science")
+rownames(s.flag) <- c("No", "Yes")
+
+kable(m.flag, caption = "Table of variate means based on whether or not student was flagged for services.")
+kable(s.flag, caption = "Table of variate standard deviation based on whether or not student was flagged for services.")
+
+```  
+  
+### B. Screening of Predictors
+  
+1. **The Added Variable** plots are shown. The plots indicate the importance of a covariate in a model if all other covariates are included in the model.  A covariate that adds value will have a linear(or curvilinear) pattern of the residuals. The plots also indicate if any transformations are necessary for the covariate. Since the plots all show an equal, random spread of residuals about the line (flag is still random because 0 and 1 are the only possible values), it does not appear that any transformations of covariates is necessary.  
+Bases upon the plots, English and Science scores appear to be the most important values when all other covariates are included in the model. It also appears that whether a student is flagged for services(Flag) does not appear to add any value to a model that includes all other covariates.
+
+
+```{r added variable plot}
+prplot(m1,1)
+prplot(m1,2)
+prplot(m1,3)
+prplot(m1,4)
+prplot(m1,5)
+```  
+  
+2. **Multicollinearity** can create instability in estimation. Being that our main purpose is for prediction, the issues observed with multicollinearity can largely be ignored. It observed that most covariate have a moderate to high correlation. Science/Reading($r=$ `r round(cor(m.Grades$Science, m.Grades$Reading),3)` ) and Science/English ($r=$ `r round(cor(m.Grades$English, m.Grades$Science),3)` ) have the highest correlation.
+
+```{r scatterplots2, fig.cap= "Figure 1: A Scatterplot of variates."}
+pairs(GPA~ English + Math + Reading + Science, data = m.Grades)
+```  
+  
+```{r correlation2, fig.cap="Figure 2: Pearson's Correlation Coefficients Matrix."}
+kable(cor(m.Grades[,-c(1,7)]), caption ="Figure 2: Pearson's Correlation Coefficients Matrix." )
+```  
+  
+3. **Automatic variable selection methods** can be a useful starting point in eliminating redundant variables. The function *regsubsets()* using the exhaustive method was used to identify the three best subsets parameter values.
+  
+```{r selection}
+ma <- regsubsets(GPA~English + Math + Reading + Science + Flag, data = m.Grades)
+(sma <- summary(ma))
+```  
+
+```{r selection criteria}
+par(mfrow=c(1,3))
+plot(2:6,sma$adj, xlab = "Number of Parameters", ylab = expression((R^2)[adj]))
+plot(2:6, sma$bic, xlab = "Number of Parameters", ylab = expression(BIC))
+plot(2:6, sma$cp, xlab = "Number of Parameters", ylab = expression(C[p]))
+```  
+  
+```{r criteria table}
+p <- 2:6
+criteria <- rbind(sma$adj, sma$bic, sma$cp, p-sma$cp)
+criteria <- round(criteria,3)
+colnames(criteria) <- c("2","3","4","5","6")
+rownames(criteria) <- c("Adjusted coefficient of Determination", "BIC", "Mallows Cp","p-Mallows Cp")
+kable(criteria, caption = "Table of decision criteria based upon the number of parameters, p, in the model.")
+```
+  
+The three best subsets according to the $C_p$ criterion (value closes to p) is the 3 parameter model: $$Y_i = \beta_0 + \beta_1X_{i1} + \beta_4X_{i4} + \varepsilon_i$$ the 4 parameter model: $$Y_i = \beta_0 + \beta_1X_{i1} + \beta_3X_{i3} +\beta_4X_{i4} + \varepsilon_i$$ and the 5 parameter model: $$Y_i = \beta_0 + \beta_1X_{i1} + \beta_2X_{i2} + \beta_3X_{i3} + \beta_4X_{i4} + \varepsilon_i$$  where:   
+
+  $Y_i =$ the **GPA** of the $i^{th}$ student,  
+
+  $X_{i1}=$ the **English** score for the $i^{th}$ student,  
+
+  $X_{i2}=$ the **Math** score for the $i^{th}$ student,   
+  
+  $X_{i3}=$ the **Reading** score for the $i^{th}$ student,    
+  
+  $X_{i4}=$ the **Science** score for the $i^{th}$ student,   
+  
+  $X_{i5}=$ whether or not the $i_{th}$ student has ever been flagged for services, with $X_5 = 1$ for "yes" and $X_5 = 0$ for "no".  
+
+The 3 parameter model, $Y_i = \beta_0 + \beta_1X_{i1} + \beta_4X_{i4} + \varepsilon_i$ appears to have the comparable bias according to $C_p$ criterion. It is also the model that presents the significantly smallest BIC and is the largest $R^2_{adj}$. Thus, this is the chosen model to be used for validation.  
+
+```{r chosen model, include=FALSE}
+m2 <- lm(GPA ~ English + Science, data = m.Grades)
+m3 <- lm(GPA ~ English + Science + Reading, data = m.Grades)
+m4 <- lm(GPA ~ English + Science + Reading + Math, data = m.Grades)
+prplot(m3,3)
+prplot(m4,4) #Checking prplots with other potential models to determine if they should be included.
+```
+  
+4. Formal testing for **multicollinearity** can now be done using **variance inflation factors (VIF)**. Although it is not necessary for prediction, it is useful information. VIFs measure how much the variances of the estimated regression coefficients are inflated as compared to when the predictor variables are not linearly related.  A maximum VIF in excess of 10 is a good rule of thumb for multicollinearity problems.  Based on the maximum VIF, `r max(vif(m2))`, there do not appear to be any issues that need would need remediation.   
+  
+```{r vif}
+kable(vif(m2), col.names = "VIF")
+```  
+  
+### C. Model Validation
+  
+1. **A validation data set** is used to compare the model chosen from the training data set.  If the model is valid, we should get similar results in the validation data set as we did in the training data set.  The chosen model was fit using the validation set, then the estimates of the regression coefficients, their standard deviations, each models error mean squares, and each models $R^2_{adj}$ are compared.  
+In general, the estimates of the model fitted to the validation data set was similar to that of the model building data set.  Difference in the coefficients should be expected based upon the multicollinearity of English and Science.  This should not affect the predictive power of the final model. 
+  
+```{r validation model}
+m2 <- lm(GPA ~ English + Science, data = m.Grades)
+m.val <- lm(GPA ~ English + Science, data = v.Grades)
+
+val.coef <- rbind(coef(m2),coef(m.val),summary(m2)$coefficients[4:6],summary(m.val)$coefficients[4:6])
+val.s <- cbind(c(summary(m2)$sigma^2, summary(m.val)$sigma^2),c(summary(m2)$adj, summary(m.val)$adj))
+rownames(val.coef) <- c("Training Set Coefficients","Validation Set Coefficients", "Training Set Standard Error","Validation Set Standard Error")
+colnames(val.s) <- c("MSE", "Adjusted R.Squared")
+rownames(val.s) <- c("Training Set", "Validation Set")
+kable(val.coef, caption = "Table of coefficients and their standard error for the model building and validation set.")
+kable(val.s, caption = "Table of mean square error and adjusted R.Squared for the model building and validation set.")
+```  
+  
+  
+2. The **mean square prediction error (MSRP)** calculates the MSE of the model built from the training data set when it is fit to the validation data set. The mean square prediction error (MSRP) is then compared to the $MSE_p$ (MSE of the model data set). 
+The MSPR is reasonably close to the MSE of the model-building data set. This suggest that there is not substantial bias in the model and thus is valid.  
+
+```{r MSPR}
+y.hat <- predict(m2, v.Grades)
+MSPR <- sum((v.Grades$GPA-y.hat)^2)/length(v.Grades$GPA)
+MSPR.table <- cbind(MSPR, summary(m2)$sigma^2)
+kable(MSPR.table, col.names = c("MSPR", "MSE"))
+```  
+  
+3. Now that the model has been validated, the model is fit to the **full data set**. The process of comparing the estimates of the regression coefficients, their standard deviations, each models error mean squares, and each models $R^2_{adj}$ was repeated to observe the fit. It is expected that the standard error of the model coefficients will be smaller in the full model, due to the difference in size of the data set.
+
+```{r full model}
+m2 <- lm(GPA ~ English + Science, data = m.Grades)
+m.full <- lm(GPA ~ English + Science, data = Grades)
+
+full.coef <- rbind(coef(m2),coef(m.full),summary(m2)$coefficients[4:6],summary(m.full)$coefficients[4:6])
+full.s <- cbind(c(summary(m2)$sigma^2, summary(m.full)$sigma^2),c(summary(m2)$adj, summary(m.full)$adj))
+rownames(full.coef) <- c("Training Set Coefficients","Full Data Set Coefficients", "Training Set Standard Error","Full Data Set Standard Error")
+colnames(full.s) <- c("MSE", "Adjusted R.Squared")
+rownames(full.s) <- c("Training Set", "Full Set")
+kable(full.coef, caption = "Table of coefficients and their standard error for the model building and validation set.")
+kable(full.s, caption = "Table of mean square error and adjusted R.Squared for the model building and full data set.")
+```  
+  
+  
+**If a check of residual analysis determines no issues, this will be the final model.**
+  
+### D. Residual Diagnostics
+  
+1. The **plots of the residuals** against the fitted values and each of the predictor variables indicate that no modifications to the model should be made.  The residuals have no systematic departure from 0 in any of the plots. There also appears to be constant variance across the fitted values. 
+  
+```{r residual plot}
+resid <- residuals(m2)
+y.hat <- fitted(m2, m.Grades)
+
+par(mfrow=c(1,2))
+plot(resid~y.hat, pch=20, xlab=expression(hat(Y)), ylab=expression(e[i]))
+abline(h=0, lty=2, col="red")
+
+plot(resid~ English, data = m.Grades, pch=20, xlab="English", ylab=expression(e[i]))
+abline(h=0, lty=2, col="red")
+
+plot(resid~ Math, data = m.Grades, pch=20, xlab="Math", ylab=expression(e[i]))
+abline(h=0, lty=2, col="red")
+
+plot(resid~ Reading, data = m.Grades, pch=20, xlab="Reading", ylab=expression(e[i]))
+abline(h=0, lty=2, col="red")
+
+plot(resid~ Science, data = m.Grades, pch=20, xlab="Science", ylab=expression(e[i]))
+abline(h=0, lty=2, col="red")
+```
+
+2. An exploration of potential **high leverage** cases, 109 and 35, was undertaken to determine their **influence**.  After obtaining the DFFITS, DFBETAS, and Cook's distance for each of the cases, they were determined to have no significant influence. No cases had a value greater than 1 (general rule of thumb for both DFFITS and DFBETAS) in either the DFFITS and DFBETAS.
+
+```{r influence, fig.cap="Figure: Halfnormal plot of Cook's Distance"}
+m.i <- influence(m2) 
+halfnorm(cooks.distance(m2))
+```  
+  
+  
+  
+    
+```{r influence table}
+id <- c(35,109)
+inf.table <- cbind(cooks.distance(m.full)[id], dffits(m.full)[id], dfbetas(m.full)[id])
+colnames(inf.table) <- c("Cook's Distance", "DFFITS", "DFBETAS")
+kable(inf.table)
+```
+  
+3. The assumption of **Constancy** in error terms (residuals) is observed in the residual plots above. A Breusch-Pagan test for constant variance confined this assumption ($p=$ `r round(ncvTest(m2)$p, 2)` ).
+
+```{r constancy, include=FALSE}
+ncvTest(m2)
+```
+
+4. Error terms appear to be **independent** based on the sequence plot.  
+
+```{r independence}
+plot(resid ,type="l",ylab=expression(e[i]),main="Sequence Plot of Residuals")
+points(resid,pch=16,col="darkgray")
+abline(0,0,lty=2)
+```
+  
+```{r, include=FALSE}
+theor <- qqnorm(resid)$x
+smp <- qqnorm(resid)$y
+c <- cor(theor,smp)
+```
+5. **Normallity** of the residuals is assessed in the normal Q-Q Plot below. There appears to be no significant departure from normality. The coefficient of correlation between theoretical and sample quartiles `r round(c,4)` both indicate that the assumption of normality is reasonable.
+
+
+```{r normality }
+theor <- qqnorm(resid)$x
+smp <- qqnorm(resid)$y
+qqline(resid)
+c <- cor(theor,smp)
+```
+
+
+#Session Information
+```{r session-info}
+sessionInfo()
+```
+
+All of the statistical analyses in this document will be performed using `r R.version.string`.  R packages used will be maintained using the [packrat](http://rstudio.github.io/packrat/) dependency management system.  
